@@ -101,4 +101,27 @@ If everything is set up _correctly_, you should see your new app running in your
 
 This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
 
+## Errors with react-native-accurate-step-counter
+
+```
+# replace respective properties with the following values in:
+# `node_modules/react-native-accurate-step-counter/android/build.gradle`
+
+compileSdkVersion 30
+
+
+dependencies {
+    implementation 'com.facebook.react:react-native:+'
+    }
+
+# Add HIGH_SAMPLING_RATE_SENSORS permission to your android manifest file at:
+# HealthCart/android/app/src/main/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+....
+<uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"/>
+....
+</manifest>
+
+```
+
 ## Start Interacting with your dapp

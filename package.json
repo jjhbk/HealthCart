@@ -21,7 +21,10 @@
     "graphql": "^16.7.1",
     "react": "18.2.0",
     "react-native": "0.72.1",
+    "react-native-accurate-step-counter": "^2.0.4",
+    "react-native-os": "^1.2.6",
     "react-native-reanimated": "^3.3.0",
+    "react-native-shake": "^5.4.0",
     "urql": "2.2.0",
     "web3": "^4.0.2"
   },

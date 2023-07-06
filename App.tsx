@@ -14,6 +14,7 @@ import {Inspect} from './src/inspect';
 import {Notices} from './src/notices';
 import {Reports} from './src/reports';
 import {Vouchers} from './src/vouchers';
+import Pedometer from './src/pedometer.jsx';
 import {
   SafeAreaView,
   ScrollView,
@@ -47,6 +48,7 @@ function App(): JSX.Element {
     <SafeAreaView style={backgroundStyle}>
       <ScrollView>
         <GraphQLProvider>
+          <Pedometer />
           <Inspect />
           <Text>Input</Text>
           <Input />
