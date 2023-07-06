@@ -1,0 +1,5 @@
+{
+  "graphql": "your ngrok tunnel url for port 4000",
+  "hardhat": "your ngrok tunnel url for port 8545",
+  "inspect": "your ngrok tunnel url for port 5005"
+}
