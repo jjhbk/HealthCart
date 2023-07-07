@@ -19,10 +19,11 @@ import {IERC721__factory} from '@cartesi/rollups';
 import {isEnabled} from 'react-native/Libraries/Performance/Systrace';
 import {MyStyles} from './styles';
 import tunnelConfig from './tunnel_config.json';
+import chainConfig from './config.json';
 export const Input: React.FC = () => {
   const rollups = useRollups();
   const provider = new ethers.providers.JsonRpcProvider(tunnelConfig.hardhat);
-
+  const [network, setNetwork] = useState<string>('');
   const sendAddress = async (str: string) => {
     if (rollups) {
       rollups.relayContract.relayDAppAddress(rollups.dappContract.address);
