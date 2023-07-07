@@ -14,6 +14,8 @@ import {Inspect} from './src/inspect';
 import {Notices} from './src/notices';
 import {Reports} from './src/reports';
 import {Vouchers} from './src/vouchers';
+import {MyStyles} from './src/styles';
+
 import {
   SafeAreaView,
   ScrollView,
@@ -48,13 +50,13 @@ function App(): JSX.Element {
       <ScrollView>
         <GraphQLProvider>
           <Inspect />
-          <Text>Input</Text>
+          <Text style={MyStyles.HeadinStyle1}>Input</Text>
           <Input />
-          <Text>Notices</Text>
+          <Text style={MyStyles.HeadinStyle1}>Notices</Text>
           <Notices />
-          <Text>Reports</Text>
+          <Text style={MyStyles.HeadinStyle1}>Reports</Text>
           <Reports />
-          <Text>Vouchers</Text>
+          <Text style={MyStyles.HeadinStyle1}>Vouchers</Text>
           <Vouchers />
         </GraphQLProvider>
       </ScrollView>

@@ -4,6 +4,7 @@ import React from 'react';
 
 import {useReportsQuery} from './generated/graphql';
 import {View, TouchableOpacity, Text} from 'react-native';
+import {MyStyles} from './styles';
 type Report = {
   id: string;
   index: number;
@@ -61,6 +62,7 @@ export const Reports: React.FC = () => {
   return (
     <View>
       <TouchableOpacity
+        style={MyStyles.ButtonStyle}
         onPress={() => {
           reexecuteQuery({requestPolicy: 'network-only'});
         }}>
@@ -68,18 +70,18 @@ export const Reports: React.FC = () => {
       </TouchableOpacity>
       <View style={{flexDirection: 'column'}}>
         <View style={{flexDirection: 'row'}}>
-          <Text>Input Index</Text>
-          <Text>report Index</Text>
-          <Text>Payload</Text>
+          <Text style={MyStyles.ColumnStyle}>Input Index</Text>
+          <Text style={MyStyles.ColumnStyle}>report Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Payload</Text>
         </View>
         {Reports.map((n: any) => {
           return (
             <View
               style={{flexDirection: 'row'}}
               key={`${n.input.index}-${n.index}`}>
-              <Text>{n.input.index}</Text>
-              <Text>{n.index}</Text>
-              <Text>{n.payload}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.input.index}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.index}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.payload}</Text>
             </View>
           );
         })}

@@ -4,6 +4,7 @@ import {useVouchersQuery, useVoucherQuery} from './generated/graphql';
 
 import {useRollups} from './useRollups';
 import {View, Text, TouchableOpacity} from 'react-native';
+import {MyStyles} from './styles';
 
 type Voucher = {
   id: string;
@@ -170,23 +171,29 @@ export const Vouchers: React.FC = props => {
     });
   return (
     <View>
-      <Text>Voucher to execute</Text>
+      <Text style={MyStyles.HeadinStyle2}>Voucher to execute</Text>
       {voucherToExecute ? (
         <View style={{flexDirection: 'column'}}>
           <View style={{flexDirection: 'row'}}>
-            <Text>Input Index</Text>
-            <Text>Voucher Index</Text>
-            <Text>Destination</Text>
-            <Text>Action</Text>
-            <Text>Input Payload</Text>
-            <Text>Msg</Text>
+            <Text style={MyStyles.ColumnStyle}>Input Index</Text>
+            <Text style={MyStyles.ColumnStyle}>Voucher Index</Text>
+            <Text style={MyStyles.ColumnStyle}>Destination</Text>
+            <Text style={MyStyles.ColumnStyle}>Action</Text>
+            <Text style={MyStyles.ColumnStyle}>Input Payload</Text>
+            <Text style={MyStyles.ColumnStyle}>Msg</Text>
           </View>
           <View style={{flexDirection: 'row'}}>
-            <Text>{voucherToExecute.input.index}</Text>
-            <Text>{voucherToExecute.index}</Text>
-            <Text>{voucherToExecute.destination}</Text>1
+            <Text style={MyStyles.ColumnStyle}>
+              {voucherToExecute.input.index}
+            </Text>
+            <Text style={MyStyles.ColumnStyle}>{voucherToExecute.index}</Text>
+            <Text style={MyStyles.ColumnStyle}>
+              {voucherToExecute.destination}
+            </Text>
+            1
             {(!voucherToExecute.proof || voucherToExecute.executed) && (
               <TouchableOpacity
+                style={MyStyles.ButtonStyle}
                 onPress={() => executeVoucher(voucherToExecute)}>
                 <Text>
                   {voucherToExecute.proof
@@ -197,38 +204,43 @@ export const Vouchers: React.FC = props => {
                 </Text>
               </TouchableOpacity>
             )}
-            <Text>{voucherToExecute.input.payload}</Text>
-            <Text>{voucherToExecute.msg}</Text>
+            <Text style={MyStyles.ColumnStyle}>
+              {voucherToExecute.input.payload}
+            </Text>
+            <Text style={MyStyles.ColumnStyle}>{voucherToExecute.msg}</Text>
           </View>
         </View>
       ) : (
         <Text>Nothing yet</Text>
       )}
       <TouchableOpacity
+        style={MyStyles.ButtonStyle}
         onPress={() => reexecuteQuery({requestPolicy: 'network-only'})}>
         <Text>Reload</Text>
       </TouchableOpacity>
       <View style={{flexDirection: 'column'}}>
         <View style={{flexDirection: 'row'}}>
-          <Text>Input Index</Text>
-          <Text>Voucher Index</Text>
-          <Text>Destination</Text>
-          <Text>Action</Text>
-          <Text>Input Payload</Text>
-          <Text>Msg</Text>
+          <Text style={MyStyles.ColumnStyle}>Input Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Voucher Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Destination</Text>
+          <Text style={MyStyles.ColumnStyle}>Action</Text>
+          <Text style={MyStyles.ColumnStyle}>Input Payload</Text>
+          <Text style={MyStyles.ColumnStyle}>Msg</Text>
         </View>
         {vouchers.map((n: any) => {
           return (
             <View
               style={{flexDirection: 'row'}}
               key={`${n.input.index}-${n.index}`}>
-              <Text>{n.input.index}</Text>
-              <Text>{n.index}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.input.index}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.index}</Text>
               <Text>{n.destination}</Text>
-              <TouchableOpacity onPress={() => getProof(n)}>
+              <TouchableOpacity
+                style={MyStyles.ButtonStyle}
+                onPress={() => getProof(n)}>
                 <Text>Get Proof</Text>
               </TouchableOpacity>
-              <Text>{n.payload}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.payload}</Text>
             </View>
           );
         })}
