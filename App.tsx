@@ -32,6 +32,7 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import {MyStyles} from './src/styles';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -48,15 +49,15 @@ function App(): JSX.Element {
     <SafeAreaView style={backgroundStyle}>
       <ScrollView>
         <GraphQLProvider>
-          <Pedometer />
+          <Text style={MyStyles.HeadinStyle1}>Inspect</Text>
           <Inspect />
-          <Text>Input</Text>
+          <Text style={MyStyles.HeadinStyle1}>Input</Text>
           <Input />
-          <Text>Notices</Text>
+          <Text style={MyStyles.HeadinStyle1}>Notices</Text>
           <Notices />
-          <Text>Reports</Text>
+          <Text style={MyStyles.HeadinStyle1}>Reports</Text>
           <Reports />
-          <Text>Vouchers</Text>
+          <Text style={MyStyles.HeadinStyle1}>Vouchers</Text>
           <Vouchers />
         </GraphQLProvider>
       </ScrollView>

@@ -3,6 +3,7 @@ import React from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 
 import {useNoticesQuery} from './generated/graphql';
+import {MyStyles} from './styles';
 type Notice = {
   id: string;
   index: number;
@@ -60,6 +61,7 @@ export const Notices: React.FC = () => {
   return (
     <View>
       <TouchableOpacity
+        style={MyStyles.ButtonStyle}
         onPress={() => {
           reexecuteQuery({requestPolicy: 'network-only'});
         }}>
@@ -67,18 +69,18 @@ export const Notices: React.FC = () => {
       </TouchableOpacity>
       <View style={{flexDirection: 'column'}}>
         <View style={{flexDirection: 'row'}}>
-          <Text>Input Index</Text>
-          <Text>Notice Index</Text>
-          <Text>Payload</Text>
+          <Text style={MyStyles.ColumnStyle}>Input Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Notice Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Payload</Text>
         </View>
         {notices.map((n: any) => {
           return (
             <View
               style={{flexDirection: 'row'}}
               key={`${n.input.index}-${n.index}`}>
-              <Text>{n.input.index}</Text>
-              <Text>{n.index}</Text>
-              <Text>{n.payload}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.input.index}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.index}</Text>
+              <Text style={MyStyles.ColumnStyle}>{n.payload}</Text>
             </View>
           );
         })}

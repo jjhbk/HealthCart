@@ -1,5 +1,5 @@
 {
-  "graphql": "your ngrok tunnel url for port 4000",
-  "hardhat": "your ngrok tunnel url for port 8545",
-  "inspect": "your ngrok tunnel url for port 5005"
+  "graphql": "https://9e1b-125-17-251-66.ngrok-free.app",
+  "hardhat": "https://4ce9-125-17-251-66.ngrok-free.app",
+  "inspect": "https://a38e-125-17-251-66.ngrok-free.app"
 }

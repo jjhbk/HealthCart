@@ -2,6 +2,7 @@ import React, {ReactNode, useState} from 'react';
 import {ethers} from 'ethers';
 import {View, Text, TextInput, TouchableOpacity} from 'react-native';
 import tunnelConfig from './tunnel_config.json';
+import {MyStyles} from './styles';
 export const Inspect: React.FC = () => {
   const LOCAL_INSPECT_API_URL = tunnelConfig.inspect;
   const [inspectData, setInspectData] = useState<string>('');
@@ -30,8 +31,10 @@ export const Inspect: React.FC = () => {
       <View>
         {reports.map((n: any) => (
           <View key={n.payload} style={{flexDirection: 'row'}}>
-            <Text>{n.payload}</Text>
-            <Text>{ethers.utils.toUtf8String(n.payload)}</Text>
+            <Text style={MyStyles.ColumnStyle}>{n.payload}</Text>
+            <Text style={MyStyles.ColumnStyle}>
+              {ethers.utils.toUtf8String(n.payload)}
+            </Text>
           </View>
         ))}
         <Text></Text>
@@ -41,13 +44,15 @@ export const Inspect: React.FC = () => {
   return (
     <View>
       <View>
-        <Text>Inspect</Text>
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={inspectData}
           placeholder="enter input here"
           onChangeText={e => setInspectData(e)}
         />
         <TouchableOpacity
+          style={MyStyles.ButtonStyle}
           onPress={() => {
             inspectCall(inspectData);
           }}>
@@ -56,25 +61,25 @@ export const Inspect: React.FC = () => {
       </View>
       <View style={{flexDirection: 'column'}}>
         <View style={{flexDirection: 'row'}}>
-          <Text>Active Epoch Index</Text>
-          <Text>Curr Input Index</Text>
-          <Text>Status</Text>
-          <Text>Exception Payload</Text>
+          <Text style={MyStyles.ColumnStyle}>Active Epoch Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Curr Input Index</Text>
+          <Text style={MyStyles.ColumnStyle}>Status</Text>
+          <Text style={MyStyles.ColumnStyle}>Exception Payload</Text>
         </View>
 
         <View style={{flexDirection: 'row'}}>
-          <Text>
+          <Text style={MyStyles.ColumnStyle}>
             {String(
               metadata.metadata ? metadata.metadat.active_epoch_index : '',
             )}
           </Text>
-          <Text>
+          <Text style={MyStyles.ColumnStyle}>
             {String(
               metadata.metadata ? metadata.metadat.current_epoch_index : '',
             )}
           </Text>
-          <Text>{metadata.status}</Text>
-          <Text>
+          <Text style={MyStyles.ColumnStyle}>{metadata.status}</Text>
+          <Text style={MyStyles.ColumnStyle}>
             {metadata.exception_payload
               ? ethers.utils.toUtf8String(metadata.exception_payload)
               : ''}

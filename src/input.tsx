@@ -18,6 +18,7 @@ import {IERC20__factory} from './generated/rollups';
 import {IERC721__factory} from '@cartesi/rollups';
 import {isEnabled} from 'react-native/Libraries/Performance/Systrace';
 import tunnelConfig from './tunnel_config.json';
+import {MyStyles} from './styles';
 export const Input: React.FC = () => {
   const rollups = useRollups();
   const provider = new ethers.providers.JsonRpcProvider(tunnelConfig.hardhat);
@@ -155,73 +156,90 @@ export const Input: React.FC = () => {
   return (
     <View>
       <View>
-        <Text> Send Address </Text>
-        {rollups && (
-          <TouchableOpacity onPress={() => addInput(input)}>
+        {/*rollups && (
+          <TouchableOpacity
+            style={MyStyles.ButtonStyle}
+            onPress={() => addInput(input)}>
             <Text>Send</Text>
           </TouchableOpacity>
-        )}
-        <Text> Send Input </Text>
-        <Text> Input:</Text>
+        )*/}
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={input}
           placeholder="enter input here"
           onChangeText={e => setInput(e)}
         />
         {rollups && (
-          <TouchableOpacity onPress={() => addInput(input)}>
+          <TouchableOpacity
+            style={MyStyles.ButtonStyle}
+            onPress={() => addInput(input)}>
             <Text>Send</Text>
           </TouchableOpacity>
         )}
 
-        <Text> Deposit Ether </Text>
+        <Text style={MyStyles.HeadinStyle2}> Deposit Ether </Text>
         <Text> Amount:</Text>
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={String(etherAmount)}
           placeholder="enter input here"
           onChangeText={e => setEtherAmount(Number(e))}
         />
         {rollups && (
-          <TouchableOpacity onPress={() => depositEtherToPortal(etherAmount)}>
+          <TouchableOpacity
+            style={MyStyles.ButtonStyle}
+            onPress={() => depositEtherToPortal(etherAmount)}>
             <Text>Deposit Ether</Text>
           </TouchableOpacity>
         )}
 
-        <Text> Deposit ERC20 </Text>
+        <Text style={MyStyles.HeadinStyle2}> Deposit ERC20 </Text>
         <Text> Address:</Text>
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={erc20Token}
           placeholder="enter input here"
           onChangeText={e => setErc20Token(e)}
         />
         <Text> Amount:</Text>
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={String(erc20Amount)}
           placeholder="enter input here"
           onChangeText={e => setErc20Amount(Number(e))}
         />
         {rollups && (
           <TouchableOpacity
+            style={MyStyles.ButtonStyle}
             onPress={() => depositErc20ToPortal(erc20Token, erc20Amount)}>
             <Text>Deposit Erc20</Text>
           </TouchableOpacity>
         )}
 
-        <Text> Deposit ERC721 </Text>
+        <Text style={MyStyles.HeadinStyle2}> Deposit ERC721 </Text>
         <Text> Address:</Text>
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={erc721}
           placeholder="enter input here"
           onChangeText={e => setErc721(e)}
         />
         <Text> number:</Text>
         <TextInput
+          style={MyStyles.InputStyle}
+          placeholderTextColor={'black'}
           value={String(erc721Id)}
           placeholder="enter input here"
           onChangeText={e => setErc721Id(Number(e))}
         />
         {rollups && (
           <TouchableOpacity
+            style={MyStyles.ButtonStyle}
             onPress={() => transferNftToPortal(erc721, erc721Id)}>
             <Text>Transfer NFT</Text>
           </TouchableOpacity>
