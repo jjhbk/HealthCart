@@ -22,7 +22,7 @@ import tunnelConfig from './tunnel_config.json';
 import {NetworkList, Props_Interface} from './props_interface';
 import App from '../App';
 import {net} from 'web3';
-import {useMetMask} from './hooks/useMetaMask';
+import {useMetaMask} from './hooks/useMetaMask';
 const config: any = configFile;
 const PRIV_KEY_LOCAL_HARDHAT =
   '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a';
@@ -45,19 +45,19 @@ export const useRollups = (
     connectMetaMask,
     provider,
     ethereum,
-  } = useMetMask();
+  } = useMetaMask();
   const [contracts, setContracts] = useState<RollupsContracts | undefined>();
   let address = '0x0000000000000000000000000000000000000000'; //zero addr as placeholder
   address = config[props.network].rollupAddress;
-  /* const provider = new ethers.providers.JsonRpcProvider(
+  const Thisprovider = new ethers.providers.JsonRpcProvider(
     props.network === NetworkList.Localhost
       ? tunnelConfig.hardhat
       : config[props.network].rpcUrl,
-  );*/
-  let signer = provider.getSigner();
-  //props.network === NetworkList.Localhost
-  //  ? new ethers.Wallet(PRIV_KEY_LOCAL_HARDHAT, provider)
-  //  : provider.getSigner();
+  );
+  let signer =
+    props.network === NetworkList.Localhost
+      ? new ethers.Wallet(PRIV_KEY_LOCAL_HARDHAT, Thisprovider)
+      : provider.getSigner();
   let dappRelayAddress = config[props.network].DAppRelayAddress;
   let inputBoxAddress = config[props.network].InputBoxAddress;
   let etherPortalAddress = config[props.network].EtherPortalAddress;
@@ -73,27 +73,6 @@ export const useRollups = (
   );
   console.log('from rollups:', provider.getSigner());
 
-  /* const connect = async () => {
-    try {
-      const accounts: string[] = (await props.eth.request({
-        method: 'eth_requestAccounts',
-      })) as string[];
-      console.log('RESULT', accounts?.[0]);
-      setConnection(true);
-      const provider = new props.eth.providers.Web3Provider(props.eth);
-      signer = provider.getSigner();
-    } catch (e) {
-      console.log('ERROR', e);
-    }
-  };
-  useEffect(() => {
-    if (!connection) {
-      async () => {
-        await connect;
-      };
-    }
-  }, []);*/
-  // dapp contract
   const dappContract = CartesiDApp__factory.connect(dappAddress, signer);
 
   // relay contract

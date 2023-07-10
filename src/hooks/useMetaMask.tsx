@@ -134,7 +134,7 @@ export const MetaMaskContextProvider = ({children}: PropsWithChildren) => {
   );
 };
 
-export const useMetMask = () => {
+export const useMetaMask = () => {
   const context = useContext(MetaMaskContext);
   if (context === undefined) {
     throw new Error(
