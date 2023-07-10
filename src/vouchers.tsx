@@ -5,6 +5,7 @@ import {useVouchersQuery, useVoucherQuery} from './generated/graphql';
 import {useRollups} from './useRollups';
 import {View, Text, TouchableOpacity} from 'react-native';
 import {MyStyles} from './styles';
+import {Props_Interface} from './props_interface';
 
 type Voucher = {
   id: string;
@@ -16,7 +17,7 @@ type Voucher = {
   executed: any;
 };
 
-export const Vouchers: React.FC = props => {
+export const Vouchers: React.FC<Props_Interface> = (props: Props_Interface) => {
   const [result, reexecuteQuery] = useVouchersQuery();
   const [voucherToFetch, setVoucherToFetch] = useState([0, 0]);
   const [voucherResult, reexecuteVoucherQuery] = useVoucherQuery({
@@ -24,7 +25,7 @@ export const Vouchers: React.FC = props => {
   });
   const [voucherToExecute, setVoucherToExecute] = React.useState<any>();
   const {data, fetching, error} = result;
-  const rollups = useRollups();
+  const rollups = useRollups(props);
   const getProof = async (voucher: Voucher) => {
     setVoucherToFetch([voucher.index, voucher.input.index]);
     reexecuteVoucherQuery({requestPolicy: 'network-only'});

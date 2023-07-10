@@ -20,10 +20,21 @@ import {isEnabled} from 'react-native/Libraries/Performance/Systrace';
 import {MyStyles} from './styles';
 import tunnelConfig from './tunnel_config.json';
 import chainConfig from './config.json';
-export const Input: React.FC = () => {
-  const rollups = useRollups();
-  const provider = new ethers.providers.JsonRpcProvider(tunnelConfig.hardhat);
+import {Props_Interface} from './props_interface';
+import {useMetMask} from './hooks/useMetaMask';
+export const Input: React.FC<Props_Interface> = (props: Props_Interface) => {
+  const rollups = useRollups(props);
+  //const provider = new ethers.providers.JsonRpcProvider(tunnelConfig.hardhat);
+  const {
+    wallet,
+    hasProvider,
+    isConnecting,
+    connectMetaMask,
+    provider,
+    ethereum,
+  } = useMetMask();
   const [network, setNetwork] = useState<string>('');
+  const [connection, setConnection] = useState(false);
   const sendAddress = async (str: string) => {
     if (rollups) {
       rollups.relayContract.relayDAppAddress(rollups.dappContract.address);
