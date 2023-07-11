@@ -83,3 +83,6 @@ yarn-error.log
 /backend/.node*
 /backend/.env
 /backend/.DS_Store
+
+#rollups
+/rollup/deployments/

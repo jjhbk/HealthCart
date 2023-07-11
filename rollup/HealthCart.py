@@ -25,9 +25,11 @@ logger = logging.getLogger(__name__)
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 CREATE_USER_TABLE_STATEMENT = 'CREATE TABLE USERS(userId INTEGER PRIMARY KEY UNIQUE NOT NULL,	first_name TEXT ,	last_name TEXT,address TEXT NOT NULL UNIQUE	,height INTEGER , weight INTEGER,total_rewards INTEGER,timestamp TEXT NOT NULL );'
-CREATE_DATA_TABLE_STATEMENT = 'CREATE TABLE USERDATA(Id INTEGER PRIMARY KEY UNIQUE NOT NULL, userId INTEGER ,data TEXT NOT NULL,reward INTEGER,timestamp TEXT NOT NULL);'
+CREATE_DATA_TABLE_STATEMENT = 'CREATE TABLE USERDATA(Id INTEGER PRIMARY KEY UNIQUE NOT NULL, userId INTEGER ,steps INTEGER NOT NULL,reward INTEGER,timestamp TEXT NOT NULL);'
 ADD_DATA_ACTION = "activity"
 REGISTER_USER_ACTION = "user"
+GET_USER_ACTION = "get-user"
+GET_USER_DATA_ACTION = "get-userdata"
 CREATE_TABLES = "create_tables"
 NOTICE_TYPE = "notice"
 REPORT_TYPE = "report"
@@ -95,14 +97,14 @@ def createTables():
 
 
 # helper functions
-def getUser(address):
-    stat = f"SELECT * FROM USERS WHERE address ={address}"
+def getUser(userid):
+    stat = f"SELECT * FROM USERS WHERE userId ={userid}"
     return executeStatement(stat, REPORT_TYPE)
 
 
 def registerUser(data):
     id = random.randint(0, 9999999999)
-    stat = f'Insert INTO USERS (userId,first_name,last_name,height,weight,total_rewards,timestamp) VALUES ({id},{data["firstname"]},{data["lastname"]},{data["height"]},{data["weight"]},{data["total_rewards"]},{data["timestamp"]});'
+    stat = f'Insert INTO USERS (userId,first_name,last_name,address,height,weight,total_rewards,timestamp) VALUES ({id},"{data["firstname"]}","{data["lastname"]}","{data["address"]}",{data["height"]},{data["weight"]},{data["total_rewards"]},"{data["timestamp"]}");'
     return executeStatement(stat, NOTICE_TYPE)
 
 
@@ -118,7 +120,7 @@ def getUserdata(userid):
 
 def saveUserdata(data, reward):
     id = random.randint(0, 9999999999)
-    stat = f'Insert INTO USERSDATA (Id,userId,data,reward,timestamp) VALUES ({id},{data["userid"]},{data["data"]},{data["timestamp"]},{reward});'
+    stat = f'Insert INTO USERDATA (Id,userId,steps,reward,timestamp) VALUES ({id},{data["userId"]},{data["steps"]},{reward},"{data["timestamp"]}");'
     return executeStatement(stat, REPORT_TYPE)
 
 # calculate rewards
@@ -128,7 +130,7 @@ def calculateRewards(steps, height, weight):
     calories_mile = 0.57*2.2*weight
     stride_length = 0.413*(height)
     distance_mile = (steps*stride_length)/(160000)
-    return calories_mile*distance_mile
+    return round(calories_mile*distance_mile)
 
 # issue rewards
 
@@ -136,7 +138,7 @@ def calculateRewards(steps, height, weight):
 def issueRewards(reward, total_reward):
     if reward > 50:
         post(NOTICE_TYPE, f'{"type":"issue_tokens","amount":{reward}}')
-    if reward > 5000:
+    if total_reward > 5000:
         post(NOTICE_TYPE, '{"type":"issue_nft"}')
 
 
@@ -158,12 +160,18 @@ def handle_request(data, request_type):
             result = registerUser(jsonpayload["data"])
         elif jsonpayload["action"] == ADD_DATA_ACTION:
             user = getUser(jsonpayload["data"]["userId"])
+           # logger.info("the user is:", user)
             rewards = calculateRewards(
-                jsonpayload["data"]["data"]["steps"], user[4], user[5])
-            total_rewards = rewards+user[6]
-            updateUser(user[3], total_rewards)
+                jsonpayload["data"]["steps"], user[0][4], user[0][5])
+            total_rewards = rewards+user[0][6]
+            updateUser(f'"{user[0][3]}"', total_rewards)
             result = saveUserdata(jsonpayload["data"], rewards)
-            issueRewards
+            issueRewards(rewards, total_rewards)
+        elif jsonpayload["action"] == GET_USER_ACTION:
+            getUser(jsonpayload["data"]["userId"])
+        elif jsonpayload["action"] == GET_USER_DATA_ACTION:
+            getUserdata(jsonpayload["data"]["userId"])
+
         if result:
             payloadJson = json.dumps(result)
             if request_type == "advance_state":
@@ -262,5 +270,4 @@ while True:
     else:
         rollup_request = response.json()
         data = rollup_request["data"]
-
         finish["status"] = handle_request(data, rollup_request["request_type"])
