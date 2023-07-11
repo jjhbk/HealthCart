@@ -24,13 +24,13 @@ logger = logging.getLogger(__name__)
 
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
-CREATE_USER_TABLE_STATEMENT='CREATE TABLE USERS(userId INTEGER PRIMARY KEY UNIQUE NOT NULL,	first_name TEXT ,	last_name TEXT,address TEXT NOT NULL UNIQUE	,height INTEGER , weight INTEGER,total_rewards INTEGER,timestamp TEXT NOT NULL );'
-CREATE_DATA_TABLE_STATEMENT='CREATE TABLE USERDATA(	Id INTEGER PRIMARY KEY UNIQUE NOT NULL, userId INTEGER ,data TEXT NOT NULL,reward INTEGER,timestamp TEXT NOT NULL);'
-ADD_DATA_ACTION="activity"
-REGISTER_USER_ACTION="user"
-CREATE_TABLES="create_tables"
-NOTICE_TYPE="notice"
-REPORT_TYPE="report"
+CREATE_USER_TABLE_STATEMENT = 'CREATE TABLE USERS(userId INTEGER PRIMARY KEY UNIQUE NOT NULL,	first_name TEXT ,	last_name TEXT,address TEXT NOT NULL UNIQUE	,height INTEGER , weight INTEGER,total_rewards INTEGER,timestamp TEXT NOT NULL );'
+CREATE_DATA_TABLE_STATEMENT = 'CREATE TABLE USERDATA(Id INTEGER PRIMARY KEY UNIQUE NOT NULL, userId INTEGER ,data TEXT NOT NULL,reward INTEGER,timestamp TEXT NOT NULL);'
+ADD_DATA_ACTION = "activity"
+REGISTER_USER_ACTION = "user"
+CREATE_TABLES = "create_tables"
+NOTICE_TYPE = "notice"
+REPORT_TYPE = "report"
 # connect to internal sqlite database
 con = sqlite3.connect("healthdata.db")
 
@@ -58,9 +58,9 @@ def post(endpoint, payloadStr, loglevel):
         f"Received {endpoint} status {response.status_code} body {response.content}")
 
 
-def executeStatement(statement,type):
+def executeStatement(statement, type):
     logger.info(f"Processing statement:'{statement}'")
-    userdata=None
+    userdata = None
     try:
         cur = con.cursor()
     except Exception as e:
@@ -68,71 +68,77 @@ def executeStatement(statement,type):
         msg = f"Critical error connecting to database:{e}"
         post("exception", msg, logging.ERROR)
         sys.exit(1)
-        
+
     try:
         cur.execute(statement)
-        userdata=cur.fetchall()
+        userdata = cur.fetchall()
         cur.close()
     except Exception as e:
         msg = f"Error executing statement '{statement}':{e}"
         post(REPORT_TYPE, msg, logging.ERROR)
         cur.close()
 
-    if userdata:         
-         payloadJson = json.dumps(userdata)
-         if type==REPORT_TYPE:
+    if userdata:
+        payloadJson = json.dumps(userdata)
+        if type == REPORT_TYPE:
             post(REPORT_TYPE, payloadJson, logging.INFO)
-         else:
-             post (NOTICE_TYPE,payloadJson,logging.INFO)
-         
+        else:
+            post(NOTICE_TYPE, payloadJson, logging.INFO)
+
     return userdata
 
 
-
-#create UserTable and UserData table
+# create UserTable and UserData table
 def createTables():
-    executeStatement(CREATE_USER_TABLE_STATEMENT,NOTICE_TYPE)
-    executeStatement(CREATE_DATA_TABLE_STATEMENT,NOTICE_TYPE)
-       
+    executeStatement(CREATE_USER_TABLE_STATEMENT, NOTICE_TYPE)
+    executeStatement(CREATE_DATA_TABLE_STATEMENT, NOTICE_TYPE)
 
-#helper functions
+
+# helper functions
 def getUser(address):
-    stat=f"SELECT * FROM USERS WHERE address ={address}"
-    return executeStatement(stat,REPORT_TYPE)
+    stat = f"SELECT * FROM USERS WHERE address ={address}"
+    return executeStatement(stat, REPORT_TYPE)
 
 
 def registerUser(data):
-    id=random.randint(0,9999999999)
-    stat=f"Insert USERS SET (userId,first_name,last_name,height,weight,total_rewards,timestamp) VALUES ({id},{data.firstname},{data.lastname},{data.height},{data.weight},{data.total_rewards},{data.timestamp});"      
-    return executeStatement(stat,NOTICE_TYPE)
-    
+    id = random.randint(0, 9999999999)
+    stat = f'Insert INTO USERS (userId,first_name,last_name,height,weight,total_rewards,timestamp) VALUES ({id},{data["firstname"]},{data["lastname"]},{data["height"]},{data["weight"]},{data["total_rewards"]},{data["timestamp"]});'
+    return executeStatement(stat, NOTICE_TYPE)
 
-def updateUser(address,rewards):
-    stat=f"UPDATE USERS SET total_rewards = {rewards} WHERE address = {address};"
-    return executeStatement(stat,REPORT_TYPE)
+
+def updateUser(address, rewards):
+    stat = f"UPDATE USERS SET total_rewards = {rewards} WHERE address = {address};"
+    return executeStatement(stat, REPORT_TYPE)
+
 
 def getUserdata(userid):
-    stat=f"SELECT * FROM USERDATA WHERE userId ={userid}"
-    return executeStatement(stat,REPORT_TYPE)
+    stat = f"SELECT * FROM USERDATA WHERE userId ={userid}"
+    return executeStatement(stat, REPORT_TYPE)
 
-def saveUserdata(data,reward):
-    id=random.randint(0,9999999999)
-    stat=f"Insert USERSDATA SET (Id,userId,data,reward,timestamp) VALUES ({id},{data.userid},{data.data},{data.timestamp},{reward});"
-    return executeStatement(stat,REPORT_TYPE)
 
-#calculate rewards
-def calculateRewards(steps,height,weight):
-    calories_mile=0.57*2.2*weight
-    stride_length=0.413*(height)
-    distance_mile=(steps*stride_length)/(160000)
+def saveUserdata(data, reward):
+    id = random.randint(0, 9999999999)
+    stat = f'Insert INTO USERSDATA (Id,userId,data,reward,timestamp) VALUES ({id},{data["userid"]},{data["data"]},{data["timestamp"]},{reward});'
+    return executeStatement(stat, REPORT_TYPE)
+
+# calculate rewards
+
+
+def calculateRewards(steps, height, weight):
+    calories_mile = 0.57*2.2*weight
+    stride_length = 0.413*(height)
+    distance_mile = (steps*stride_length)/(160000)
     return calories_mile*distance_mile
 
-#issue rewards
-def issueRewards(reward,total_reward):
-    if reward>50:
-        post(NOTICE_TYPE,f'{"type":"issue_tokens","amount":{reward}}')
-    if reward>5000:
-        post(NOTICE_TYPE,'{"type":"issue_nft"}')    
+# issue rewards
+
+
+def issueRewards(reward, total_reward):
+    if reward > 50:
+        post(NOTICE_TYPE, f'{"type":"issue_tokens","amount":{reward}}')
+    if reward > 5000:
+        post(NOTICE_TYPE, '{"type":"issue_nft"}')
+
 
 def handle_request(data, request_type):
     logger.info(f"Received {request_type} data {data}")
@@ -140,22 +146,23 @@ def handle_request(data, request_type):
     try:
         # retrieves Sql statement from input payload
         payload = hex2str(data["payload"])
-        jsonpayload=json.loads(payload)
-        logger.info("the payload is:",jsonpayload)
+        jsonpayload = json.loads(payload)
+        logger.info("the payload is:", jsonpayload)
         result = None
         status = "accept"
-        rewards=0
-        total_rewards=0
-        if jsonpayload["action"]==CREATE_TABLES:
+        rewards = 0
+        total_rewards = 0
+        if jsonpayload["action"] == CREATE_TABLES:
             createTables()
-        if jsonpayload["action"]==REGISTER_USER_ACTION:
-            result=registerUser(jsonpayload.data)
-        elif jsonpayload["action"]==ADD_DATA_ACTION:
-            user=getUser(jsonpayload.data.userId)
-            rewards=calculateRewards(jsonpayload.data.data.steps,user.height,user.weight)
-            total_rewards=rewards+user.total_rewards
-            updateUser(user.address,total_rewards)
-            result=saveUserdata(jsonpayload.data.data,rewards)
+        if jsonpayload["action"] == REGISTER_USER_ACTION:
+            result = registerUser(jsonpayload["data"])
+        elif jsonpayload["action"] == ADD_DATA_ACTION:
+            user = getUser(jsonpayload["data"]["userId"])
+            rewards = calculateRewards(
+                jsonpayload["data"]["data"]["steps"], user[4], user[5])
+            total_rewards = rewards+user[6]
+            updateUser(user[3], total_rewards)
+            result = saveUserdata(jsonpayload["data"], rewards)
             issueRewards
         if result:
             payloadJson = json.dumps(result)
@@ -163,7 +170,7 @@ def handle_request(data, request_type):
                 post(NOTICE_TYPE, payloadJson, logging.INFO)
             else:
                 post(REPORT_TYPE, payloadJson, logging.INFO)
-        
+
     except Exception as e:
         status: "reject"
         msg = f"Error processing data {data}\n{traceback.format_exc()}"
