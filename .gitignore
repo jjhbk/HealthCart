@@ -67,3 +67,19 @@ yarn-error.log
 
 #generated files
 /src/generated
+
+#backend 
+/backend/artifacts
+/backend/cache
+/backend/contracts.json
+/backend/coverage*
+/backend/deployments/localhost
+/backend/deployments/*/solcInputs/*.json
+/backend/dist
+/backend/node_modules
+/backend/src/types
+/backend/test/*/
+/backend/.vscode
+/backend/.node*
+/backend/.env
+/backend/.DS_Store
