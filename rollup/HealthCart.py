@@ -14,23 +14,24 @@ from os import environ
 import traceback
 import logging
 import requests
-import sqlite3
 import json
 import sys
 import random
-from assetmgmt.utils import logger
-from assetmgmt.routes import Router
-import assetmgmt.wallet as Wallet
-from assetmgmt.outputs import Output, Log, Error, Notice, Voucher
+from healthcart.utils import logger
+from healthcart.routes import Router
+import healthcart.wallet as Wallet
+from healthcart.outputs import Output, Log, Error, Notice, Voucher
 from urllib.parse import urlparse
-from assetmgmt.utils import hex_to_str
+from healthcart.utils import hex_to_str
+import sqlite3
+
 logger.info("HealthCart DApp started")
 
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 network = environ["NETWORK"]
 
 logger.info(f"HTTP rollup_server url is {rollup_server}")
-logger.inf(f"Network is {network}")
+logger.info(f"Network is {network}")
 
 # setup contracts addresses
 erc20_portal_file = open(f'./deployments/{network}/ERC20Portal.json')
@@ -39,11 +40,11 @@ erc20_portal = json.load(erc20_portal_file)
 erc721_portal_file = open(f'./deployments/{network}/ERC721Portal.json')
 erc721_portal = json.load(erc721_portal_file)
 
-HCRT_file = open(f'../backend/deployments/{network}/HCRT.json')
-HCRT_ADDRESS = json.load(HCRT_file)
+# HCRT_file = open(f'./deployments/{network}/HCRT.json')
+HCRT_ADDRESS = None  # json.load(HCRT_file)
 
-HCRT_BADGE_file = open(f'../backend/deployments/{network}/HCRTBADGE.json')
-HCRT_BADGE_ADDRESS = json.load(HCRT_BADGE_file)
+# HCRT_BADGE_file = open(f'./deployments/{network}/HCRTBADGE.json')
+HCRT_BADGE_ADDRESS = None  # json.load(HCRT_BADGE_file)
 
 dapp_address_relay_file = open(
     f'./deployments/{network}/DAppAddressRelay.json')
@@ -86,7 +87,7 @@ def str2hex(str):
 
 
 def post(endpoint, payloadStr, loglevel):
-    logger.log(loglevel, f"Adding {endpoint} with payload: {payloadStr}")
+    logger.log(loglevel, f"Adding {endpoint} wJathinith payload: {payloadStr}")
     payload = str2hex(payloadStr)
     response = requests.post(
         f"{rollup_server}/{endpoint}", json={"payload": payload})
@@ -250,9 +251,8 @@ def handle_assets(data):
         logger.debug(error_msg, exc_info=True)
         return Error(error_msg)
 
+
 # Inspect Assets
-
-
 def handle_inspect_assets(data):
     logger.debug(f"Received inspect request data {data}")
     try:
@@ -265,7 +265,6 @@ def handle_inspect_assets(data):
 
 
 # Handle Requests
-
 def handle_request(data, request_type):
     logger.info(f"Received {request_type} data {data}")
     status = "accept"
@@ -319,7 +318,11 @@ def handle_request(data, request_type):
 # Get the DAPP_ASSET_HOLDER address
         elif jsonpayload["action"] == INITIALIZE_ASSETS_ACTION:
             global DAPP_ASSET_HOLDER
-            DAPP_ASSET_HOLDER = jsonpayload["data"]["address"].lower()
+            DAPP_ASSET_HOLDER = jsonpayload["data"]["holder_add"].lower()
+            global HCRT_ADDRESS
+            HCRT_ADDRESS = jsonpayload["data"]["hcrt_add"].lower()
+            global HCRT_BADGE_ADDRESS
+            HCRT_BADGE_ADDRESS = jsonpayload["data"]["hcrt_badge_add"].lower()
 
         if result:
             payloadJson = json.dumps(result)

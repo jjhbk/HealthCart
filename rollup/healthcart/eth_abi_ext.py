@@ -1,12 +1,10 @@
 from eth_abi.codec import (
     ABICodec,
 )
-
 from eth_abi.registry import (
     registry_packed,
     BaseEquals
 )
-
 from eth_abi.decoding import (
     BooleanDecoder,
     AddressDecoder,
@@ -23,9 +21,15 @@ class PackedAddressDecoder(AddressDecoder):
 
 
 registry_packed.register_decoder(
-    BaseEquals("bool").
+    BaseEquals("bool"),
     PackedBooleanDecoder,
-    label="bool"
+    label="bool",
+)
+
+registry_packed.register_decoder(
+    BaseEquals("address"),
+    PackedAddressDecoder,
+    label='address'
 )
 
 registry_packed.register_decoder(
@@ -34,5 +38,7 @@ registry_packed.register_decoder(
     label="uint"
 )
 
+
 default_codec_packed = ABICodec(registry_packed)
+
 decode_packed = default_codec_packed.decode

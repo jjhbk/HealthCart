@@ -12,11 +12,11 @@
 
 import json
 
-from assetmgmt.balance import Balance
-from assetmgmt.utils import logger
-from assetmgmt.outputs import Error, Notice, Voucher
+from healthcart.balance import Balance
+from healthcart.utils import logger
+from healthcart.outputs import Error, Notice, Voucher
 from eth_abi import decode, encode
-from assetmgmt.eth_abi_ext import decode_packed
+from healthcart.eth_abi_ext import decode_packed
 
 # Function selector to be called during the execution of a voucher that transfers funds,
 # which corresponds to the first 4 bytes of the Keccak256-encoded result of "transfer(address,uint256)"

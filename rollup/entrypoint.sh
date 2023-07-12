@@ -12,4 +12,6 @@
 # specific language governing permissions and limitations under the License.
 
 set -e
-rollup-init python3 HealthCart.py
+#export PATH="/opt/venv/bin:$PATH"
+#export PYTHONPATH=/opt/venv/lib/python3.10/site-packages:/usr/lib/python3/dist-packages
+rollup-init python3 -m healthcart.HealthCart
