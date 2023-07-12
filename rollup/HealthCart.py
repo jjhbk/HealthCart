@@ -49,7 +49,7 @@ dapp_address_relay_file = open(
     f'./deployments/{network}/DAppAddressRelay.json')
 dapp_address_relay = json.load(dapp_address_relay_file)
 
-DAPP_ASSET_HOLDER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+DAPP_ASSET_HOLDER = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
 
 
 router = None
@@ -269,7 +269,7 @@ def handle_inspect_assets(data):
 def handle_request(data, request_type):
     logger.info(f"Received {request_type} data {data}")
     status = "accept"
-    msg_sender = data["metadata"]["msg_sender"]
+    msg_sender = data["metadata"]["msg_sender"].lower()
 
     try:
         # retrieves Sql statement from input payload
@@ -299,7 +299,7 @@ def handle_request(data, request_type):
             total_rewards = rewards+user[0][6]
             updateUser(f'"{user[0][3]}"', total_rewards)
             result = saveUserdata(jsonpayload["data"], rewards)
-            issueRewards(rewards, total_rewards)
+            issueRewards(rewards, total_rewards, user[0][3].lower())
 # Get User Registration Data
         elif jsonpayload["action"] == GET_USER_ACTION:
             result = getUser(jsonpayload["data"]["userId"])
@@ -316,6 +316,10 @@ def handle_request(data, request_type):
             if isinstance(output, Error):
                 status = "reject"
             send_request(output)
+# Get the DAPP_ASSET_HOLDER address
+        elif jsonpayload["action"] == INITIALIZE_ASSETS_ACTION:
+            global DAPP_ASSET_HOLDER
+            DAPP_ASSET_HOLDER = jsonpayload["data"]["address"].lower()
 
         if result:
             payloadJson = json.dumps(result)
