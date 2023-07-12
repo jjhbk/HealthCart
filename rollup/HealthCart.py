@@ -18,21 +18,55 @@ import sqlite3
 import json
 import sys
 import random
-
-logging.basicConfig(level="INFO")
-logger = logging.getLogger(__name__)
+from assetmgmt.utils import logger
+from assetmgmt.routes import Router
+import assetmgmt.wallet as Wallet
+from assetmgmt.outputs import Output, Log, Error, Notice, Voucher
+from urllib.parse import urlparse
+from assetmgmt.utils import hex_to_str
+logger.info("HealthCart DApp started")
 
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
+network = environ["NETWORK"]
+
 logger.info(f"HTTP rollup_server url is {rollup_server}")
+logger.inf(f"Network is {network}")
+
+# setup contracts addresses
+erc20_portal_file = open(f'./deployments/{network}/ERC20Portal.json')
+erc20_portal = json.load(erc20_portal_file)
+
+erc721_portal_file = open(f'./deployments/{network}/ERC721Portal.json')
+erc721_portal = json.load(erc721_portal_file)
+
+HCRT_file = open(f'../backend/deployments/{network}/HCRT.json')
+HCRT_ADDRESS = json.load(HCRT_file)
+
+HCRT_BADGE_file = open(f'../backend/deployments/{network}/HCRTBADGE.json')
+HCRT_BADGE_ADDRESS = json.load(HCRT_BADGE_file)
+
+dapp_address_relay_file = open(
+    f'./deployments/{network}/DAppAddressRelay.json')
+dapp_address_relay = json.load(dapp_address_relay_file)
+
+DAPP_ASSET_HOLDER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+
+
+router = None
+
+
 CREATE_USER_TABLE_STATEMENT = 'CREATE TABLE USERS(userId INTEGER PRIMARY KEY UNIQUE NOT NULL,	first_name TEXT ,	last_name TEXT,address TEXT NOT NULL UNIQUE	,height INTEGER , weight INTEGER,total_rewards INTEGER,timestamp TEXT NOT NULL );'
 CREATE_DATA_TABLE_STATEMENT = 'CREATE TABLE USERDATA(Id INTEGER PRIMARY KEY UNIQUE NOT NULL, userId INTEGER ,steps INTEGER NOT NULL,reward INTEGER,timestamp TEXT NOT NULL);'
 ADD_DATA_ACTION = "activity"
 REGISTER_USER_ACTION = "user"
 GET_USER_ACTION = "get-user"
 GET_USER_DATA_ACTION = "get-userdata"
-CREATE_TABLES = "create_tables"
+CREATE_TABLES_ACTION = "create_tables"
+INITIALIZE_ASSETS_ACTION = "initialize_assets"
+ASSETS_ACTION = "assets"
 NOTICE_TYPE = "notice"
 REPORT_TYPE = "report"
+
 # connect to internal sqlite database
 con = sqlite3.connect("healthdata.db")
 
@@ -58,6 +92,26 @@ def post(endpoint, payloadStr, loglevel):
         f"{rollup_server}/{endpoint}", json={"payload": payload})
     logger.info(
         f"Received {endpoint} status {response.status_code} body {response.content}")
+
+
+def send_request(output):
+    if isinstance(output, Output):
+        request_type = type(output).__name__.lower()
+        endpoint = request_type
+        if isinstance(output, Error):
+            endpoint = "report"
+            logger.warning(hex_to_str(output.payload))
+        elif isinstance(output, Log):
+            endpoint = "report"
+
+        logger.debug(f"Sending {request_type}")
+        response = requests.post(rollup_server + f"/{endpoint}",
+                                 json=output.__dict__)
+        logger.debug(f"Received {output.__dict__} status {response.status_code} "
+                     f"body {response.content}")
+    else:
+        for item in output:
+            send_request(item)
 
 
 def executeStatement(statement, type):
@@ -135,16 +189,88 @@ def calculateRewards(steps, height, weight):
 # issue rewards
 
 
-def issueRewards(reward, total_reward):
-    if reward > 50:
-        post(NOTICE_TYPE, f'{"type":"issue_tokens","amount":{reward}}')
-    if total_reward > 5000:
-        post(NOTICE_TYPE, '{"type":"issue_nft"}')
+def issueRewards(reward, total_reward, address):
 
+    if reward > 50:
+        output = Wallet.erc20_transfer(DAPP_ASSET_HOLDER.lower(), address,
+                                       HCRT_ADDRESS, reward*10)
+        post(NOTICE_TYPE, f'{"type":"issue_tokens","amount":{reward}}')
+        send_request(output)
+    if total_reward > 5000:
+        wallet = Wallet.balance_get(DAPP_ASSET_HOLDER.lower())
+        badges = wallet.erc721_get(erc721=HCRT_BADGE_ADDRESS)
+        output1 = Wallet.erc721_transfer(
+            DAPP_ASSET_HOLDER.lower(), address, badges[0])
+        post(NOTICE_TYPE, '{"type":"issue_nft"}')
+        send_request(output1)
+
+
+# Handle Assets
+
+
+def handle_assets(data):
+    logger.debug(f"Received asset advance request data {data}")
+    try:
+        msg_sender = data["metadata"]["msg_sender"]
+        payload = data["payload"]
+
+        if msg_sender.lower() == dapp_address_relay['address'].lower():
+            logger.debug("Setting DApp address")
+            rollup_address = payload
+            router.set_rollup_address(rollup_address)
+            return Log(f"DApp address set up successfully to {rollup_address}.")
+
+        # It is an ERC20 deposit
+        if msg_sender.lower() == erc20_portal['address'].lower():
+            try:
+                return router.process("erc20_deposit", payload)
+            except Exception as error:
+                error_msg = f"Failed to process ERC20 deposit '{payload}'. {error}"
+                logger.debug(error_msg, exc_info=True)
+                return Error(error_msg)
+        elif msg_sender.lower() == erc721_portal['address'].lower():
+            try:
+                return router.process("erc721_deposit", payload)
+            except Exception as error:
+                error_msg = f"Failed to process ERC721 deposit '{payload}'. {error}"
+                logger.debug(error_msg, exc_info=True)
+                return Error(error_msg)
+        else:
+            try:
+                str_payload = hex_to_str(payload)
+                payload = json.loads(str_payload)
+                return router.process(payload["method"], data)
+            except Exception as error:
+                error_msg = f"Failed to process command '{str_payload}'. {error}"
+                logger.debug(error_msg, exc_info=True)
+                return Error(error_msg)
+
+    except Exception as error:
+        error_msg = f"Failed to process advance_request. {error}"
+        logger.debug(error_msg, exc_info=True)
+        return Error(error_msg)
+
+# Inspect Assets
+
+
+def handle_inspect_assets(data):
+    logger.debug(f"Received inspect request data {data}")
+    try:
+        url = urlparse(hex_to_str(data["payload"]))
+        return router.process(url.path, data)
+    except Exception as error:
+        error_msg = f"Failed to process inspect request. {error}"
+        logger.debug(error_msg, exc_info=True)
+        return Error(error_msg)
+
+
+# Handle Requests
 
 def handle_request(data, request_type):
     logger.info(f"Received {request_type} data {data}")
     status = "accept"
+    msg_sender = data["metadata"]["msg_sender"]
+
     try:
         # retrieves Sql statement from input payload
         payload = hex2str(data["payload"])
@@ -154,12 +280,19 @@ def handle_request(data, request_type):
         status = "accept"
         rewards = 0
         total_rewards = 0
-        if jsonpayload["action"] == CREATE_TABLES:
+
+ # Create Database Tables
+        if jsonpayload["action"] == CREATE_TABLES_ACTION:
             createTables()
+ # Register New User
         if jsonpayload["action"] == REGISTER_USER_ACTION:
             result = registerUser(jsonpayload["data"])
+# Add UserData
         elif jsonpayload["action"] == ADD_DATA_ACTION:
             user = getUser(jsonpayload["data"]["userId"])
+            if user[0][3] != msg_sender:
+                status = "reject"
+                return status
            # logger.info("the user is:", user)
             rewards = calculateRewards(
                 jsonpayload["data"]["steps"], user[0][4], user[0][5])
@@ -167,10 +300,22 @@ def handle_request(data, request_type):
             updateUser(f'"{user[0][3]}"', total_rewards)
             result = saveUserdata(jsonpayload["data"], rewards)
             issueRewards(rewards, total_rewards)
+# Get User Registration Data
         elif jsonpayload["action"] == GET_USER_ACTION:
-            getUser(jsonpayload["data"]["userId"])
+            result = getUser(jsonpayload["data"]["userId"])
+# Get User Activity Data
         elif jsonpayload["action"] == GET_USER_DATA_ACTION:
-            getUserdata(jsonpayload["data"]["userId"])
+            result = (jsonpayload["data"]["userId"])
+# Handle Platform Assets
+        elif jsonpayload["action"] == ASSETS_ACTION:
+            output = None
+            if request_type == "advance_state":
+                output = handle_assets(data)
+            elif request_type == "inspect_state":
+                output = handle_inspect_assets
+            if isinstance(output, Error):
+                status = "reject"
+            send_request(output)
 
         if result:
             payloadJson = json.dumps(result)
@@ -180,86 +325,15 @@ def handle_request(data, request_type):
                 post(REPORT_TYPE, payloadJson, logging.INFO)
 
     except Exception as e:
-        status: "reject"
+        status = "reject"
         msg = f"Error processing data {data}\n{traceback.format_exc()}"
         post(REPORT_TYPE, msg, logging.ERROR)
 
     return status
 
 
-def handle_advance(data):
-    """
-    An advance request may be processed as follows:
-
-    1. A notice may be generated, if appropriate:
-
-    response = requests.post(rollup_server + "/notice", json={"payload": data["payload"]})
-    logger.info(f"Received notice status {response.status_code} body {response.content}")
-
-    2. During processing, any exception must be handled accordingly:
-
-    try:
-        # Execute sensible operation
-        op.execute(params)
-
-    except Exception as e:
-        # status must be "reject"
-        status = "reject"
-        msg = "Error executing operation"
-        logger.error(msg)
-        response = requests.post(rollup_server + "/report", json={"payload": str2hex(msg)})
-
-    finally:
-        # Close any resource, if necessary
-        res.close()
-
-    3. Finish processing
-
-    return status
-    """
-
-    """
-    The sample code from the Echo DApp simply generates a notice with the payload of the
-    request and print some log messages.
-    """
-
-    logger.info(f"Received advance request data {data}")
-
-    status = "accept"
-    try:
-        logger.info("Adding notice")
-        response = requests.post(
-            rollup_server + "/notice", json={"payload": data["payload"]})
-        logger.info(
-            f"Received notice status {response.status_code} body {response.content}")
-
-    except Exception as e:
-        status = "reject"
-        msg = f"Error processing data {data}\n{traceback.format_exc()}"
-        logger.error(msg)
-        response = requests.post(
-            rollup_server + "/report", json={"payload": str2hex(msg)})
-        logger.info(
-            f"Received report status {response.status_code} body {response.content}")
-
-    return status
-
-
-def handle_inspect(data):
-    logger.info(f"Received inspect request data {data}")
-    logger.info("Adding report")
-    response = requests.post(rollup_server + "/report",
-                             json={"payload": data["payload"]})
-    logger.info(f"Received report status {response.status_code}")
-    return "accept"
-
-
-handlers = {
-    "advance_state": handle_advance,
-    "inspect_state": handle_inspect,
-}
-
 finish = {"status": "accept"}
+router = Router(Wallet)
 
 while True:
     logger.info("Sending finish")
