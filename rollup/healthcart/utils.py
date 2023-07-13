@@ -3,8 +3,6 @@ import os
 from datetime import datetime, timezone
 from json import JSONEncoder
 from healthcart.balance import Balance
-from healthcart.outputs import Output, Log, Error, Notice, Voucher
-
 LOG_FMT = 'level={levelname} ts={asctime} module={module} msg="{message}"'
 LOG_LEVEL = "INFO"
 
@@ -60,23 +58,3 @@ class BalanceEncoder(PrivatePropertyEncoder):
             return list(o)
 
         return JSONEncoder.encode(self, o)
-
-
-def send_request(output):
-    if isinstance(output, Output):
-        request_type = type(output).__name__.lower()
-        endpoint = request_type
-        if isinstance(output, Error):
-            endpoint = "report"
-            logger.warning(hex_to_str(output.payload))
-        elif isinstance(output, Log):
-            endpoint = "report"
-
-        logger.debug(f"Sending {request_type}")
-        response = requests.post(rollup_server + f"/{endpoint}",
-                                 json=output.__dict__)
-        logger.debug(f"Received {output.__dict__} status {response.status_code} "
-                     f"body {response.content}")
-    else:
-        for item in output:
-            send_request(item)

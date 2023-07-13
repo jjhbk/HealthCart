@@ -135,13 +135,15 @@ class SQLRoute(AdvanceRoute):
 class RegisterUserRoute(SQLRoute):
     def execute(self, match_result, request=None):
         super().execute(match_result, request)
-        return self._sql.registerUser(self._request_args.get("data"))
+        data = self._sql.registerUser(self._request_args.get("data"))
+        return Log(json.dumps(data))
 
 
 class AddUserDataRoute(SQLRoute):
     def execute(self, match_result, request=None):
         super().execute(match_result, request)
-        return self._sql.AddUserData(self._request_args.get("data"))
+        data = self._sql.AddUserData(self._request_args.get("data"))
+        return Log(json.dumps(data))
 
 
 class CreateTablesRoute(SQLRoute):
@@ -160,7 +162,7 @@ class GetUserRoute(SQLRoute):
 
     def execute(self, match_result, request=None):
         address = match_result["address"]
-        data = self._sql.getUser(address)
+        data = self._sql.getUser(address.lower())
         return Log(json.dumps(data))
 
 
@@ -168,6 +170,13 @@ class GetUserDataRoute(SQLRoute):
     def execute(self, match_result, request=None):
         userId = match_result["userId"]
         data = self._sql.getUserdata(userId)
+        return Log(json.dumps(data))
+
+
+class GetUserByIdRoute(SQLRoute):
+    def execute(self, match_result, request=None):
+        userId = match_result["userId"]
+        data = self._sql.getUserfromId(userId)
         return Log(json.dumps(data))
 
 
@@ -187,7 +196,8 @@ class Router():
             "initialize_assets": InitializeAssetsRoute(sql),
             "create_table": CreateTablesRoute(sql),
             "get_user": GetUserRoute(sql),
-            "get_userdata": GetUserDataRoute(sql)
+            "get_userdata": GetUserDataRoute(sql),
+            "userbyid": GetUserByIdRoute(sql)
         }
 
         self._route_map = Mapper()
@@ -266,6 +276,10 @@ class Router():
         self._route_map.connect(None,
                                 "userdata/{userId}",
                                 controller="get_userdata",
+                                action="execute")
+        self._route_map.connect(None,
+                                "userbyid/{userId}",
+                                controller="userbyid",
                                 action="execute")
 
     def set_rollup_address(self, rollup_address):

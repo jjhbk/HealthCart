@@ -41,19 +41,19 @@ do
     sleep 5
 done
 
-yarn start input send --payload '{"action":"create_tables"}'
+yarn start input send --payload '{"method":"table","args":{}}'
 
 sleep 5
 
 #echo "{\"action\":\"initialize_assets\",\"data\":{\"holder_add\":\"$holder_add\",\"hcrt_add\":\"$ERC_20\",\"hcrt_badge_add\":\"$ERC_721\"}}"
-Json_string='{"action":"initialize_assets","data":{"holder_add":"'$holder_address'","hcrt_add":"'$ERC_20'","hcrt_badge_add":"'$ERC_721'"}}'
+Json_string='{"method":"initialize","args":{"data":{"holder_add":"'$holder_address'","hcrt_add":"'$ERC_20'","hcrt_badge_add":"'$ERC_721'"}}}'
 echo $Json_string
 
 yarn start input send --payload "$Json_string"
 
-yarn start input send --payload '{"action":"user","data":{"firstname":"jj","lastname":"hbk","address":"0xaskdfhkdsjkfhjksafd","height":180,"weight":80,"total_rewards":0,"timestamp":"151212"}}'
+yarn start input send --payload '{"method":"register","args":{"data":{"firstname":"jj","lastname":"hbk","address":"0xaskdfhkdsjkfhjksafd","height":180,"weight":80,"total_rewards":0,"timestamp":"151212"}}}'
 
-echo yarn start input send --payload '{"action":"activity","data":{"userId":1399997774,"steps":1000,"reward":0,"timestamp":"1243324"}}'
+echo yarn start input send --payload '{"method":"add_data","args":{"data":{"userId":3204996716,"steps":1000,"reward":0,"timestamp":"1243324"}}}'
 
 echo "enter user data"
 read add_user_data

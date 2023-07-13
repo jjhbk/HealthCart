@@ -1,12 +1,9 @@
 from os import environ
-import traceback
-import logging
 import requests
 import json
 import sys
 import random
 from healthcart.utils import logger
-from healthcart.routes import Router
 import healthcart.wallet as Wallet
 from healthcart.outputs import Output, Log, Error, Notice, Voucher
 from urllib.parse import urlparse
@@ -19,25 +16,19 @@ network = environ["NETWORK"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 logger.info(f"Network is {network}")
 
-# setup contracts addresses
-erc20_portal_file = open(f'./deployments/{network}/ERC20Portal.json')
-erc20_portal = json.load(erc20_portal_file)
-
-erc721_portal_file = open(f'./deployments/{network}/ERC721Portal.json')
-erc721_portal = json.load(erc721_portal_file)
-
 # HCRT_file = open(f'./deployments/{network}/HCRT.json')
-HCRT_ADDRESS = None  # json.load(HCRT_file)
+# json.load(HCRT_file)
+HCRT_ADDRESS = "0x4ed7c70f96b99c776995fb64377f0d4ab3b0e1c1"
 
 # HCRT_BADGE_file = open(f'./deployments/{network}/HCRTBADGE.json')
-HCRT_BADGE_ADDRESS = None  # json.load(HCRT_BADGE_file)
+# json.load(HCRT_BADGE_file)
+HCRT_BADGE_ADDRESS = "0x59b670e9fa9d0a427751af201d676719a970857b"
 
 dapp_address_relay_file = open(
     f'./deployments/{network}/DAppAddressRelay.json')
 dapp_address_relay = json.load(dapp_address_relay_file)
 
 DAPP_ASSET_HOLDER = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
-
 
 CREATE_USER_TABLE_STATEMENT = 'CREATE TABLE USERS(userId INTEGER PRIMARY KEY UNIQUE NOT NULL,	first_name TEXT ,	last_name TEXT,address TEXT NOT NULL UNIQUE	,height INTEGER , weight INTEGER,total_rewards INTEGER,timestamp TEXT NOT NULL );'
 CREATE_DATA_TABLE_STATEMENT = 'CREATE TABLE USERDATA(Id INTEGER PRIMARY KEY UNIQUE NOT NULL, userId INTEGER ,steps INTEGER NOT NULL,reward INTEGER,timestamp TEXT NOT NULL);'
@@ -98,11 +89,10 @@ def executeStatement(statement, type):
         return
 
     if userdata:
-        report = {"type": "sqldata", "data": userdata}
         if type == REPORT_TYPE:
-            send_request(Log(json.dumps(report)))
+            send_request(Log(json.dumps(userdata)))
         else:
-            send_request(Notice(json.dumps(report)))
+            send_request(Notice(json.dumps(userdata)))
     return userdata
 
 
@@ -110,6 +100,7 @@ def executeStatement(statement, type):
 def createTables():
     executeStatement(CREATE_USER_TABLE_STATEMENT, NOTICE_TYPE)
     executeStatement(CREATE_DATA_TABLE_STATEMENT, NOTICE_TYPE)
+    return Log("created tables successfully")
 
 
 # helper functions
@@ -171,23 +162,23 @@ def issueRewards(reward, total_reward, address):
 
 
 def AddUserData(jsonpayload):
-    user = getUserfromId(jsonpayload["data"]["userId"])
+    user = getUserfromId(jsonpayload["userId"])
     rewards = calculateRewards(
-        jsonpayload["data"]["steps"], user[0][4], user[0][5])
+        jsonpayload["steps"], user[0][4], user[0][5])
     total_rewards = rewards+user[0][6]
     logger.info(f"rewards are {rewards}")
     updateUser(f'"{user[0][3]}"', total_rewards)
-    saveUserdata(jsonpayload["data"], rewards)
+    saveUserdata(jsonpayload, rewards)
     issueRewards(rewards, total_rewards, user[0][3].lower())
 
 
 def initializeAssets(jsonpayload):
     global DAPP_ASSET_HOLDER
-    DAPP_ASSET_HOLDER = jsonpayload["data"]["holder_add"]
+    DAPP_ASSET_HOLDER = jsonpayload["holder_add"]
     global HCRT_ADDRESS
-    HCRT_ADDRESS = jsonpayload["data"]["hcrt_add"]
+    HCRT_ADDRESS = jsonpayload["hcrt_add"]
     global HCRT_BADGE_ADDRESS
-    HCRT_BADGE_ADDRESS = jsonpayload["data"]["hcrt_badge_add"]
+    HCRT_BADGE_ADDRESS = jsonpayload["hcrt_badge_add"]
     logger.info(
         f"added {DAPP_ASSET_HOLDER} {HCRT_ADDRESS} {HCRT_BADGE_ADDRESS}")
     return Log(json.dumps({f"added {DAPP_ASSET_HOLDER} {HCRT_ADDRESS} {HCRT_BADGE_ADDRESS}"}))
