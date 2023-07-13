@@ -23,6 +23,7 @@ import healthcart.wallet as Wallet
 from healthcart.outputs import Output, Log, Error, Notice, Voucher
 from urllib.parse import urlparse
 from healthcart.utils import hex_to_str
+import healthcart.sql as SQL
 import sqlite3
 
 logger.info("HealthCart DApp started")
@@ -87,7 +88,7 @@ def str2hex(str):
 
 
 def post(endpoint, payloadStr, loglevel):
-    logger.log(loglevel, f"Adding {endpoint} wJathinith payload: {payloadStr}")
+    logger.log(loglevel, f"Adding {endpoint} with payload: {payloadStr}")
     payload = str2hex(payloadStr)
     response = requests.post(
         f"{rollup_server}/{endpoint}", json={"payload": payload})
@@ -214,7 +215,8 @@ def issueRewards(reward, total_reward, address):
 # Handle Assets
 
 
-def handle_assets(data):
+def handle_advance(data):
+    logger.info("Processing handle_asset request")
     logger.debug(f"Received asset advance request data {data}")
     try:
         msg_sender = data["metadata"]["msg_sender"]
@@ -245,7 +247,7 @@ def handle_assets(data):
             try:
                 str_payload = hex_to_str(payload)
                 payload = json.loads(str_payload)
-                return router.process(payload["method"], data)
+                return router.process(payload["data"]["method"], data)
             except Exception as error:
                 error_msg = f"Failed to process command '{str_payload}'. {error}"
                 logger.debug(error_msg, exc_info=True)
@@ -258,7 +260,7 @@ def handle_assets(data):
 
 
 # Inspect Assets
-def handle_inspect_assets(data):
+def handle_inspect(data):
     logger.debug(f"Received inspect request data {data}")
     try:
         url = urlparse(hex_to_str(data["payload"]))
@@ -273,6 +275,29 @@ def handle_inspect_assets(data):
 def handle_request(data, request_type):
     logger.info(f"Received {request_type} data {data}")
     status = "accept"
+
+    if request_type == "inspect":
+        payload = hex2str(data["payload"])
+        jsonpayload = json.loads(payload)
+        logger.info("the payload is:", jsonpayload)
+        # Get User Registration Data
+
+        if jsonpayload["action"] == GET_USER_ACTION:
+            result = getUser(jsonpayload["data"]["address"])
+# Get User Activity Data
+        elif jsonpayload["action"] == GET_USER_DATA_ACTION:
+            result = getUserdata(jsonpayload["data"]["userId"])
+
+        else:
+            output = handle_inspect_assets(data)
+            if isinstance(output, Error):
+                status = "reject"
+            send_request(output)
+        if result:
+            post(REPORT_TYPE, json.dumps(result), logging.INFO)
+
+        return status
+
     msg_sender = data["metadata"]["msg_sender"].lower()
 
     try:
@@ -282,13 +307,12 @@ def handle_request(data, request_type):
             if isinstance(output, Error):
                 status = "reject"
                 send_request(output)
-                return status
+            return status
 
         payload = hex2str(data["payload"])
         jsonpayload = json.loads(payload)
         logger.info("the payload is:", jsonpayload)
         result = None
-        status = "accept"
         rewards = 0
         total_rewards = 0
 
@@ -301,66 +325,51 @@ def handle_request(data, request_type):
 # Add UserData
         elif jsonpayload["action"] == ADD_DATA_ACTION:
             user = getUserfromId(jsonpayload["data"]["userId"])
-            # if user[0][3] != msg_sender:
-            #    status = "reject"
-            # logger.error("error processing activity data")
-            #    return status
-           # logger.info("the user is:", user)
             rewards = calculateRewards(
                 jsonpayload["data"]["steps"], user[0][4], user[0][5])
             total_rewards = rewards+user[0][6]
+            logger.info(f"rewards are {rewards}")
             updateUser(f'"{user[0][3]}"', total_rewards)
             result = saveUserdata(jsonpayload["data"], rewards)
             issueRewards(rewards, total_rewards, user[0][3].lower())
-# Get User Registration Data
-        elif jsonpayload["action"] == GET_USER_ACTION:
-            result = getUser(jsonpayload["data"]["address"])
-# Get User Activity Data
-        elif jsonpayload["action"] == GET_USER_DATA_ACTION:
-            result = getUserdata(jsonpayload["data"]["userId"])
-# Handle Platform Assets
-        elif jsonpayload["action"] == ASSETS_ACTION:
-            output = None
-            if request_type == "advance_state":
-                output = handle_assets(data)
-            elif request_type == "inspect_state":
-                output = handle_inspect_assets
-            if isinstance(output, Error):
-                status = "reject"
-            send_request(output)
+
+
 # Get the DAPP_ASSET_HOLDER address
         elif jsonpayload["action"] == INITIALIZE_ASSETS_ACTION:
             global DAPP_ASSET_HOLDER
-            DAPP_ASSET_HOLDER = jsonpayload["data"]["holder_add"].lower()
+            DAPP_ASSET_HOLDER = jsonpayload["data"]["holder_add"]
             global HCRT_ADDRESS
-            HCRT_ADDRESS = jsonpayload["data"]["hcrt_add"].lower()
+            HCRT_ADDRESS = jsonpayload["data"]["hcrt_add"]
             global HCRT_BADGE_ADDRESS
-            HCRT_BADGE_ADDRESS = jsonpayload["data"]["hcrt_badge_add"].lower()
+            HCRT_BADGE_ADDRESS = jsonpayload["data"]["hcrt_badge_add"]
             logger.info(
                 f"added {DAPP_ASSET_HOLDER} {HCRT_ADDRESS} {HCRT_BADGE_ADDRESS}")
+            return status
+
+        # Handle Platform Assets
+        else:            # jsonpayload["action"] == ASSETS_ACTION:
+            output = handle_assets(data)
+            if isinstance(output, Error):
+                status = "reject"
+            send_request(output)
 
         if result:
             payloadJson = json.dumps(result)
-            if request_type == "advance_state":
-                post(NOTICE_TYPE, payloadJson, logging.INFO)
-            else:
-                post(REPORT_TYPE, payloadJson, logging.INFO)
+            post(NOTICE_TYPE, payloadJson, logging.INFO)
 
     except Exception as e:
-        output = None
-        if request_type == "advance_state":
-            output = handle_assets(data)
-        elif request_type == "inspect_state":
-            output = handle_inspect_assets
-        if isinstance(output, Error):
-            status = "reject"
-        send_request(output)
+        msg = f"Error executing request {jsonpayload}':{e}"
+        post(REPORT_TYPE, msg, logging.ERROR)
 
     return status
 
 
+handlers = {
+    "advance_state": handle_advance,
+    "inspect_state": handle_inspect,
+}
 finish = {"status": "accept"}
-router = Router(Wallet)
+router = Router(Wallet, SQL)
 
 while True:
     logger.info("Sending finish")
@@ -371,4 +380,10 @@ while True:
     else:
         rollup_request = response.json()
         data = rollup_request["data"]
-        finish["status"] = handle_request(data, rollup_request["request_type"])
+        handler = handlers[rollup_request["request_type"]]
+        output = handler(rollup_request["data"])
+        finish["status"] = "accept"
+        if isinstance(output, Error):
+            finish["status"] = "reject"
+
+        send_request(output)

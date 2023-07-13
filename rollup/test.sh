@@ -16,7 +16,7 @@ echo $ERC_20 $ERC_721
 holder_address="0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
 
 i=1
-while [[ $i -le 5 ]] ; do
+while [[ $i -le 1 ]] ; do
     echo "$i"
     (( i += 1 ))
     echo "minting token ..."
@@ -34,7 +34,7 @@ yarn start erc20 deposit --amount 100000000000000000000 --erc20 $ERC_20
 
 sleep 5
 
-for i in {1..5}
+for i in {1..1}
 do 
     echo $i
     yarn start erc721 deposit --tokenId $i --erc721 $ERC_721
@@ -61,4 +61,4 @@ read add_user_data
 $add_user_data
 
 
-
+yarn start input send    --payload  '{"action":"get-user","data":{"address":"0xaskdfhkdsjkfhjksafd"}}'

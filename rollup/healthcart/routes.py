@@ -14,6 +14,7 @@ import json
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 import healthcart.wallet as Wallet
+import healthcart.sql as SQL
 from healthcart.utils import BalanceEncoder
 from healthcart.utils import logger
 from healthcart.outputs import Error, Log
@@ -126,9 +127,53 @@ class TransferErc721Route(WalletRoute):
                                             self._request_args.get("token_id"))
 
 
+class SQLRoute(AdvanceRoute):
+    def __init__(self, sql: SQL):
+        self._sql = sql
+
+
+class RegisterUserRoute(SQLRoute):
+    def execute(self, match_result, request=None):
+        super().execute(match_result, request)
+        return self._sql.registerUser(self._request_args.get("data"))
+
+
+class AddUserDataRoute(SQLRoute):
+    def execute(self, match_result, request=None):
+        super().execute(match_result, request)
+        return self._sql.AddUserData(self._request_args.get("data"))
+
+
+class CreateTablesRoute(SQLRoute):
+    def execute(self, match_result, request=None):
+        super().execute(match_result, request)
+        return self._sql.createTables()
+
+
+class InitializeAssetsRoute(SQLRoute):
+    def execute(self, match_result, request=None):
+        super().execute(match_result, request)
+        return self._sql.initializeAssets(self._request_args.get("data"))
+
+
+class GetUserRoute(SQLRoute):
+
+    def execute(self, match_result, request=None):
+        address = match_result["address"]
+        data = self._sql.getUser(address)
+        return Log(json.dumps(data))
+
+
+class GetUserDataRoute(SQLRoute):
+    def execute(self, match_result, request=None):
+        userId = match_result["userId"]
+        data = self._sql.getUserdata(userId)
+        return Log(json.dumps(data))
+
+
 class Router():
 
-    def __init__(self, wallet):
+    def __init__(self, wallet, sql):
         self._controllers = {
             "erc20_deposit": DepositERC20Route(wallet),
             "erc721_deposit": DepositERC721Route(wallet),
@@ -137,6 +182,12 @@ class Router():
             "erc721_transfer": TransferErc721Route(wallet),
             "erc20_withdraw": WithdrawErc20Route(wallet),
             "erc20_transfer": TransferErc20Route(wallet),
+            "register_user": RegisterUserRoute(sql),
+            "add_userdata": AddUserDataRoute(sql),
+            "initialize_assets": InitializeAssetsRoute(sql),
+            "create_table": CreateTablesRoute(sql),
+            "get_user": GetUserRoute(sql),
+            "get_userdata": GetUserDataRoute(sql)
         }
 
         self._route_map = Mapper()
@@ -191,6 +242,30 @@ class Router():
         self._route_map.connect(None,
                                 "erc20transfer",
                                 controller="erc20_transfer",
+                                action="execute")
+        self._route_map.connect(None,
+                                "register",
+                                controller="register_user",
+                                action="execute")
+        self._route_map.connect(None,
+                                "add_data",
+                                controller="add_userdata",
+                                action="execute")
+        self._route_map.connect(None,
+                                "table",
+                                controller="create_table",
+                                action="execute")
+        self._route_map.connect(None,
+                                "initialize",
+                                controller="initialize_assets",
+                                action="execute")
+        self._route_map.connect(None,
+                                "user/{address}",
+                                controller="get_user",
+                                action="execute"),
+        self._route_map.connect(None,
+                                "userdata/{userId}",
+                                controller="get_userdata",
                                 action="execute")
 
     def set_rollup_address(self, rollup_address):
