@@ -1,5 +1,5 @@
-import { LogDescription } from "@ethersproject/abi";
-import { ethers } from "ethers";
+import {LogDescription} from '@ethersproject/abi';
+import {ethers} from 'ethers';
 
 /**
  * Attempts to retrieve the first instance of the specified event from a given event logs array
@@ -11,7 +11,7 @@ import { ethers } from "ethers";
 export function getEvent(
   eventName: string,
   parser: ethers.Contract,
-  eventLogs: Array<any>
+  eventLogs: Array<any>,
 ): LogDescription | undefined {
   let expectedEvent: LogDescription;
   for (let i = 0; i < eventLogs.length; i++) {

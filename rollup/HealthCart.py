@@ -152,7 +152,12 @@ def createTables():
 
 
 # helper functions
-def getUser(userid):
+def getUser(address):
+    stat = f"SELECT * FROM USERS WHERE address ={address}"
+    return executeStatement(stat, REPORT_TYPE)
+
+
+def getUserfromId(userid):
     stat = f"SELECT * FROM USERS WHERE userId ={userid}"
     return executeStatement(stat, REPORT_TYPE)
 
@@ -272,6 +277,13 @@ def handle_request(data, request_type):
 
     try:
         # retrieves Sql statement from input payload
+        if msg_sender.lower() == dapp_address_relay['address'].lower() or msg_sender.lower() == erc20_portal['address'].lower() or msg_sender.lower() == erc721_portal['address'].lower():
+            output = handle_assets(data)
+            if isinstance(output, Error):
+                status = "reject"
+                send_request(output)
+                return status
+
         payload = hex2str(data["payload"])
         jsonpayload = json.loads(payload)
         logger.info("the payload is:", jsonpayload)
@@ -288,10 +300,11 @@ def handle_request(data, request_type):
             result = registerUser(jsonpayload["data"])
 # Add UserData
         elif jsonpayload["action"] == ADD_DATA_ACTION:
-            user = getUser(jsonpayload["data"]["userId"])
-            if user[0][3] != msg_sender:
-                status = "reject"
-                return status
+            user = getUserfromId(jsonpayload["data"]["userId"])
+            # if user[0][3] != msg_sender:
+            #    status = "reject"
+            # logger.error("error processing activity data")
+            #    return status
            # logger.info("the user is:", user)
             rewards = calculateRewards(
                 jsonpayload["data"]["steps"], user[0][4], user[0][5])
@@ -301,10 +314,10 @@ def handle_request(data, request_type):
             issueRewards(rewards, total_rewards, user[0][3].lower())
 # Get User Registration Data
         elif jsonpayload["action"] == GET_USER_ACTION:
-            result = getUser(jsonpayload["data"]["userId"])
+            result = getUser(jsonpayload["data"]["address"])
 # Get User Activity Data
         elif jsonpayload["action"] == GET_USER_DATA_ACTION:
-            result = (jsonpayload["data"]["userId"])
+            result = getUserdata(jsonpayload["data"]["userId"])
 # Handle Platform Assets
         elif jsonpayload["action"] == ASSETS_ACTION:
             output = None
@@ -323,6 +336,8 @@ def handle_request(data, request_type):
             HCRT_ADDRESS = jsonpayload["data"]["hcrt_add"].lower()
             global HCRT_BADGE_ADDRESS
             HCRT_BADGE_ADDRESS = jsonpayload["data"]["hcrt_badge_add"].lower()
+            logger.info(
+                f"added {DAPP_ASSET_HOLDER} {HCRT_ADDRESS} {HCRT_BADGE_ADDRESS}")
 
         if result:
             payloadJson = json.dumps(result)
@@ -332,9 +347,14 @@ def handle_request(data, request_type):
                 post(REPORT_TYPE, payloadJson, logging.INFO)
 
     except Exception as e:
-        status = "reject"
-        msg = f"Error processing data {data}\n{traceback.format_exc()}"
-        post(REPORT_TYPE, msg, logging.ERROR)
+        output = None
+        if request_type == "advance_state":
+            output = handle_assets(data)
+        elif request_type == "inspect_state":
+            output = handle_inspect_assets
+        if isinstance(output, Error):
+            status = "reject"
+        send_request(output)
 
     return status
 
