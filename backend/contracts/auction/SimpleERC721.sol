@@ -19,7 +19,7 @@ contract HCRTBADGE is ERC721 {
     using Counters for Counters.Counter;
     Counters.Counter private currentTokenId;
 
-    constructor() ERC721('HCRTBADGE', 'SIM721') {}
+    constructor() ERC721('HCRTBADGE', 'HCRT_BDG') {}
 
     function mintTo(address recipient) public returns (uint256) {
         currentTokenId.increment();

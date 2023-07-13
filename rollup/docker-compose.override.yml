@@ -4,46 +4,47 @@ services:
   server_manager:
     image: ${DAPP_IMAGE:-cartesi/dapp:HealthCart-devel-server}
 
-  backend:
-    build: ./backend
-    network_mode: host    
-    depends_on:
-      hardhat:
-        condition: service_healthy
-    command:
-      [
-        "deploy",
-        "--reset",
-        "--network",
-        "localhost",
-        "--export",
-        "/deployments/localhost/localhost.json"
-      ]
-    init: true
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "test",
-          "-f",
-          "/deployments/localhost/localhost.json"
-        ]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-    volumes:
-      - ./backend/deployments:/app/deployments
-
-  dispatcher:
-    depends_on:
-      backend:
-        condition: service_completed_successfully
-  state_server:
-    depends_on:
-      backend:
-        condition: service_completed_successfully
-
-  deployer:
-    depends_on:
-      backend:
-        condition: service_completed_successfully
+  #backend:
+  #  build: ./backend
+  #  network_mode: host    
+  #  depends_on:
+  #    hardhat:
+  #      condition: service_healthy
+  #  command:
+  #    [
+  #      "deploy",
+  #      "--reset",
+  #      "--network",
+  #      "localhost",
+  #      "--export",
+  #      "/deployments/localhost/localhost.json"
+  #    ]
+  #  init: true
+  #  healthcheck:
+  #    test:
+  #      [
+  #        "CMD",
+  #        "test",
+  #        "-f",
+  #        "/deployments/localhost/localhost.json"
+  #      ]
+  #    interval: 30s
+  #    timeout: 30s
+  #    retries: 5
+  #  volumes:
+  #    - ./backend/deployments:/app/deployments
+#
+  #dispatcher:
+  #  depends_on:
+  #    backend:
+  #      condition: service_completed_successfully
+  #state_server:
+  #  depends_on:
+  #    backend:
+  #      condition: service_completed_successfully
+#
+  #deployer:
+  #  depends_on:
+  #    backend:
+  #      condition: service_completed_successfully
+#

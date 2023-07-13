@@ -16,7 +16,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 contract HCRT is ERC20 {
-    constructor(address minter, uint256 initialSupply) ERC20('HCRT', 'SIM20') {
+    constructor(address minter, uint256 initialSupply) ERC20('HCRT', 'HCRT') {
         _mint(minter, initialSupply);
     }
 }
